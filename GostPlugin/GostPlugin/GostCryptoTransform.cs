@@ -6,30 +6,27 @@ namespace GostPlugin
 {
     public sealed class GostCryptoTransform : ICryptoTransform
     {
-        private const int blockSize = 8; // 64-bit
-        private const int keyLength = 32; // 256-bit
-
-        private readonly byte[] key = new byte[keyLength];
-        private byte[] state = new byte[blockSize];
-        private bool encrypt;
+        private readonly byte[] _key = new byte[GostECB.KeyLength];
+        private byte[] _state = new byte[GostECB.BlockSize];
+        private bool _encrypt;
 
         /// <summary>
         /// Creates instance of GOST cipher transform.
         /// </summary>
-        /// <param name="key">256-bit key</param>
-        /// <param name="state">Initialization vector</param>
-        /// <param name="encrypt">Use True for encryption mode</param>
+        /// <param name="_key">256-bit _key</param>
+        /// <param name="_state">Initialization vector</param>
+        /// <param name="_encrypt">Use True for encryption mode</param>
         public GostCryptoTransform(byte[] key, byte[] iv, bool encrypt)
         {
-            Array.Copy(key, this.key, keyLength);
-            Array.Copy(iv, this.state, blockSize);
-            this.encrypt = encrypt;
+            Array.Copy(key, _key, GostECB.KeyLength);
+            Array.Copy(iv, _state, GostECB.BlockSize);
+            _encrypt = encrypt;
         }
 
         /// <summary>
         /// This module implements so-called Cipher Feedback Mode of GOST algorithm which can be
-        /// used only to process one set of data - to either encrypt a signle plaintext or decrypt a
-        /// single ciphertext.
+        /// used only to process one set of data - to either _encrypt a signle plaintext or decrypt
+        /// a single ciphertext.
         /// </summary>
         public bool CanReuseTransform { get { return false; } }
 
@@ -41,26 +38,41 @@ namespace GostPlugin
         /// <summary>
         /// Input block size is always 64-bit.
         /// </summary>
-        public int InputBlockSize { get { return blockSize; } }
+        public int InputBlockSize { get { return GostECB.BlockSize; } }
 
         /// <summary>
         /// Input block size is always 64-bit.
         /// </summary>
-        public int OutputBlockSize { get { return blockSize; } }
+        public int OutputBlockSize { get { return GostECB.BlockSize; } }
 
+        /// <summary>
+        /// Performs cryptographic transform of a single (next) 64-bit block
+        /// </summary>
+        /// <param name="inputBuffer"></param>
+        /// <param name="inputOffset"></param>
+        /// <param name="inputCount">Must be 8 bytes (64 bits)</param>
+        /// <param name="outputBuffer"></param>
+        /// <param name="outputOffset"></param>
+        /// <returns></returns>
         public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {
-            if (inputCount == 0) { return inputCount; }
-            else { Debug.Assert(inputCount == InputBlockSize, "Input block must be 64-bit long"); }
+            if (inputCount == 0)
+            {
+                return inputCount;
+            }
+            else
+            {
+                Debug.Assert(inputCount == InputBlockSize, "Input block must be 64-bit long");
+            }
 
             byte[] dataBlock = new byte[InputBlockSize];
             Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
 
-            byte[] processed = GostECB.Process(state, key, GostECB.SBox_CryptoPro_A, true);
+            byte[] processed = GostECB.Process(_state, _key, GostECB.SBox_CryptoPro_A, true);
             byte[] result = XOr(dataBlock, processed);
 
             Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);
-            Array.Copy(encrypt ? result : dataBlock, state, blockSize);
+            Array.Copy(_encrypt ? result : dataBlock, _state, GostECB.BlockSize);
 
             return inputCount;
         }
