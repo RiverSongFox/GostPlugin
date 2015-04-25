@@ -35,19 +35,19 @@ namespace GostPlugin
             Debug.Assert(data.Length == BlockSize, "BlockSize must be 64-bit long");
             Debug.Assert(key.Length == KeyLength, "Key must be 256-bit long");
 
-            uint a = BitConverter.ToUInt32(data, 0);
-            uint b = BitConverter.ToUInt32(data, 4);
+            var a = BitConverter.ToUInt32(data, 0);
+            var b = BitConverter.ToUInt32(data, 4);
 
-            uint[] subKeys = GetSubKeys(key);
+            var subKeys = GetSubKeys(key);
 
-            byte[] result = new byte[8];
+            var result = new byte[8];
 
             for (int i = 0; i < 32; i++)
             {
-                int keyIndex = GetKeyIndex(i, encrypt);
-                uint subKey = subKeys[keyIndex];
-                uint fValue = F(a, subKey, sBox);
-                uint round = b ^ fValue;
+                var keyIndex = GetKeyIndex(i, encrypt);
+                var subKey = subKeys[keyIndex];
+                var fValue = F(a, subKey, sBox);
+                var round = b ^ fValue;
                 if (i < 31)
                 {
                     b = a;
@@ -90,7 +90,7 @@ namespace GostPlugin
 
         private static uint[] GetSubKeys(byte[] key)
         {
-            uint[] subKeys = new uint[8];
+            var subKeys = new uint[8];
             for (int i = 0; i < 8; i++)
                 subKeys[i] = (uint)BitConverter.ToUInt32(key, i * 4);
             return subKeys;

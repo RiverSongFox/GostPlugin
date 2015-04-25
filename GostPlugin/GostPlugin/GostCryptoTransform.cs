@@ -56,32 +56,32 @@ namespace GostPlugin
         /// <returns></returns>
         public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {
-            if (inputCount == 0)
-            {
-                return inputCount;
-            }
-            else
+            if (inputCount != 0)
             {
                 Debug.Assert(inputCount == InputBlockSize, "Input block must be 64-bit long");
+
+                byte[] dataBlock = new byte[InputBlockSize];
+                Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
+
+                byte[] processed = GostECB.Process(_state, _key, GostECB.SBox_CryptoPro_A, true);
+                byte[] result = XOr(dataBlock, processed);
+
+                Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);
+                Array.Copy(_encrypt ? result : dataBlock, _state, GostECB.BlockSize);
             }
-
-            byte[] dataBlock = new byte[InputBlockSize];
-            Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
-
-            byte[] processed = GostECB.Process(_state, _key, GostECB.SBox_CryptoPro_A, true);
-            byte[] result = XOr(dataBlock, processed);
-
-            Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);
-            Array.Copy(_encrypt ? result : dataBlock, _state, GostECB.BlockSize);
 
             return inputCount;
         }
 
         private byte[] XOr(byte[] a, byte[] b)
         {
-            byte[] c = new byte[a.Length];
+            Debug.Assert(a.Length == b.Length, "Byte arrays must be same length");
+
+            var c = new byte[a.Length];
             for (int i = 0; i < a.Length; i++)
+            {
                 c[i] = (byte)(a[i] ^ b[i]);
+            }
             return c;
         }
 
@@ -95,7 +95,7 @@ namespace GostPlugin
         /// <returns></returns>
         public byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
         {
-            byte[] outputBuffer = new byte[inputCount];
+            var outputBuffer = new byte[inputCount];
             TransformBlock(inputBuffer, inputOffset, inputCount, outputBuffer, 0);
             return outputBuffer;
         }

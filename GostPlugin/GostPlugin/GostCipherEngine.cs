@@ -12,6 +12,8 @@ namespace GostPlugin
             0x9C, 0xFD, 0x52, 0xD1, 0x08, 0x22, 0xA6, 0xF7
         };
 
+        private static readonly string _cipherName = "GOST 28147-89 (256-Bit Key)";
+
         private readonly PwUuid _cipherUuid;
 
         public GostCipherEngine()
@@ -21,7 +23,7 @@ namespace GostPlugin
 
         public PwUuid CipherUuid { get { return _cipherUuid; } }
 
-        public string DisplayName { get { return "GOST 28147-89 (256-Bit Key)"; } }
+        public string DisplayName { get { return _cipherName; } }
 
         private Stream CreateStream(Stream sInput, bool bEncrypt, byte[] pbKey, byte[] pbIV)
         {
