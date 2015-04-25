@@ -1,7 +1,7 @@
 # GostPlugin
 Enables KeePass 2.x to encrypt databases using the GOST 28147-89 algorithm.
 
-> The plugin has not been widely tesetd yet, so we strictly recommend you create backup of your KeePass database before using the plugin for the first time.
+> The plugin has not been widely tested yet, so we strictly recommend you create backup of your KeePass database before using the plugin for the first time.
 
 ## Features
 
