@@ -16,8 +16,11 @@ namespace GostPlugin
         /// <param name="_key">256-bit _key</param>
         /// <param name="_state">Initialization vector</param>
         /// <param name="_encrypt">Use True for encryption mode</param>
-        public GostCryptoTransform(byte[] key, byte[] iv, bool encrypt)
+        public GostCryptoTransform (byte[] key, byte[] iv, bool encrypt)
         {
+            Debug.Assert(key.Length == GostECB.KeyLength, "Key must be 256-bit long");
+            Debug.Assert(iv.Length == GostECB.KeyLength, "Initialization Vector must be 64-bit long");
+
             Array.Copy(key, _key, GostECB.KeyLength);
             Array.Copy(iv, _state, GostECB.BlockSize);
             _encrypt = encrypt;
@@ -54,28 +57,29 @@ namespace GostPlugin
         /// <param name="outputBuffer"></param>
         /// <param name="outputOffset"></param>
         /// <returns></returns>
-        public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
+        public int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {
             if (inputCount != 0)
             {
-                Debug.Assert(inputCount == InputBlockSize, "Input block must be 64-bit long");
+                byte[] dataBlock = new byte[inputCount];
+                byte[] gamma = new byte[GostECB.BlockSize];
+                byte[] result = new byte[inputCount];
 
-                byte[] dataBlock = new byte[InputBlockSize];
                 Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
 
-                byte[] processed = GostECB.Process(_state, _key, GostECB.SBox_CryptoPro_A, true);
-                byte[] result = XOr(dataBlock, processed);
+                gamma = GostECB.Process(_state, _key, GostECB.SBox_CryptoPro_A, true);
+                result = XOr(dataBlock, gamma);
 
                 Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);
-                Array.Copy(_encrypt ? result : dataBlock, _state, GostECB.BlockSize);
+                Array.Copy(_encrypt ? result : dataBlock, _state, inputCount);
             }
 
             return inputCount;
         }
 
-        private byte[] XOr(byte[] a, byte[] b)
+        private byte[] XOr (byte[] a, byte[] b)
         {
-            Debug.Assert(a.Length == b.Length, "Byte arrays must be same length");
+            Debug.Assert(a.Length <= b.Length, "Block length must be shorter or equal to gamma");
 
             var c = new byte[a.Length];
             for (int i = 0; i < a.Length; i++)
@@ -93,14 +97,14 @@ namespace GostPlugin
         /// <param name="inputOffset"></param>
         /// <param name="inputCount"></param>
         /// <returns></returns>
-        public byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
+        public byte[] TransformFinalBlock (byte[] inputBuffer, int inputOffset, int inputCount)
         {
             var outputBuffer = new byte[inputCount];
             TransformBlock(inputBuffer, inputOffset, inputCount, outputBuffer, 0);
             return outputBuffer;
         }
 
-        public void Dispose()
+        public void Dispose ()
         {
         }
     }
