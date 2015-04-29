@@ -61,6 +61,8 @@ namespace GostPlugin
         {
             if (inputCount != 0)
             {
+                Debug.Assert(inputCount == GostECB.BlockSize, "Input block must be 64 bits long");
+
                 byte[] dataBlock = new byte[inputCount];
                 byte[] gamma = new byte[GostECB.BlockSize];
                 byte[] result = new byte[inputCount];
