@@ -3,23 +3,12 @@ using System.Diagnostics;
 
 namespace GostPlugin
 {
-    public static class GostECB
+    public class GostECB
     {
         public const int BlockSize = 8; // 64-bit
         public const int KeyLength = 32; // 256-bit
 
-        public static readonly byte[][] SBox_Test = {
-            new byte[] { 0x03, 0x05, 0x0f, 0x07, 0x0c, 0x01, 0x0b, 0x06, 0x0e, 0x00, 0x08, 0x0d, 0x02, 0x09, 0x0a, 0x04 },
-            new byte[] { 0x09, 0x05, 0x07, 0x00, 0x01, 0x08, 0x03, 0x02, 0x0a, 0x0f, 0x0d, 0x06, 0x0c, 0x04, 0x0b, 0x0e },
-            new byte[] { 0x0b, 0x09, 0x00, 0x06, 0x07, 0x0c, 0x0f, 0x0e, 0x02, 0x04, 0x03, 0x0a, 0x0d, 0x01, 0x08, 0x05 },
-            new byte[] { 0x03, 0x05, 0x02, 0x0b, 0x0c, 0x06, 0x04, 0x0e, 0x0f, 0x09, 0x08, 0x00, 0x01, 0x0a, 0x0d, 0x07 },
-            new byte[] { 0x02, 0x0b, 0x03, 0x00, 0x0e, 0x09, 0x0a, 0x04, 0x08, 0x0d, 0x0f, 0x05, 0x01, 0x07, 0x0c, 0x06 },
-            new byte[] { 0x0e, 0x0f, 0x0c, 0x09, 0x05, 0x08, 0x06, 0x03, 0x0d, 0x01, 0x02, 0x07, 0x00, 0x0a, 0x0b, 0x04 },
-            new byte[] { 0x0c, 0x02, 0x08, 0x06, 0x07, 0x0e, 0x0a, 0x00, 0x09, 0x05, 0x0f, 0x03, 0x01, 0x04, 0x0b, 0x0d },
-            new byte[] { 0x0c, 0x08, 0x0b, 0x06, 0x0e, 0x03, 0x02, 0x09, 0x04, 0x0a, 0x07, 0x05, 0x00, 0x0d, 0x0f, 0x01 }
-        };
-
-        public static readonly byte[][] SBox_CryptoPro_A = {
+        private readonly byte[][] _sBox = {
             new byte[] { 0x09, 0x06, 0x03, 0x02, 0x08, 0x0b, 0x01, 0x07, 0x0a, 0x04, 0x0e, 0x0f, 0x0c, 0x00, 0x0d, 0x05 },
             new byte[] { 0x03, 0x07, 0x0e, 0x09, 0x08, 0x0a, 0x0f, 0x00, 0x05, 0x02, 0x06, 0x0c, 0x0b, 0x04, 0x0d, 0x01 },
             new byte[] { 0x0e, 0x04, 0x06, 0x02, 0x0b, 0x03, 0x0d, 0x08, 0x0c, 0x0f, 0x05, 0x0a, 0x00, 0x07, 0x01, 0x09 },
@@ -30,7 +19,29 @@ namespace GostPlugin
             new byte[] { 0x0b, 0x0a, 0x0f, 0x05, 0x00, 0x0c, 0x0e, 0x08, 0x06, 0x02, 0x03, 0x09, 0x01, 0x07, 0x0d, 0x04 }
         };
 
-        public static byte[] Process(byte[] data, byte[] key, byte[][] sBox, bool encrypt)
+        private uint[][] _sBox32;
+
+        public GostECB()
+        {
+            Convert_sBox();
+        }
+
+        private void Convert_sBox()
+        {
+            _sBox32 = new uint[4][];
+
+            for (int i = 0, j = 0; i < 4; i++, j += 2)
+            {
+                _sBox32[i] = new uint[256];
+                for (int k = 0; k < 256; k++)
+                {
+                    _sBox32[i][k] = (uint)((_sBox[j][k & 0x0f] ^ _sBox[j + 1][k >> 4] << 4) << (j * 4));
+                    _sBox32[i][k] = _sBox32[i][k] << 11 ^ _sBox32[i][k] >> 21;
+                }
+            }
+        }
+
+        public byte[] Process(byte[] data, byte[] key, bool encrypt)
         {
             Debug.Assert(data.Length == BlockSize, "BlockSize must be 64-bit long");
             Debug.Assert(key.Length == KeyLength, "Key must be 256-bit long");
@@ -46,7 +57,7 @@ namespace GostPlugin
             {
                 var keyIndex = GetKeyIndex(i, encrypt);
                 var subKey = subKeys[keyIndex];
-                var fValue = F(a, subKey, sBox);
+                var fValue = F(a, subKey, _sBox);
                 var round = b ^ fValue;
                 if (i < 31)
                 {
@@ -65,30 +76,18 @@ namespace GostPlugin
             return result;
         }
 
-        private static uint F(uint block, uint subKey, byte[][] sBox)
+        private uint F(uint block, uint subKey, byte[][] _sBox)
         {
             block = (block + subKey) % uint.MaxValue;
-            block = Substitute(block, sBox);
-            block = (block << 11) | (block >> 21);
+            block =
+                _sBox32[0][(block & 0x000000ff) >> 0] ^
+                _sBox32[1][(block & 0x0000ff00) >> 8] ^
+                _sBox32[2][(block & 0x00ff0000) >> 16] ^
+                _sBox32[3][(block & 0xff000000) >> 24];
             return block;
         }
 
-        private static uint Substitute(uint value, byte[][] sBox)
-        {
-            byte index, sBlock;
-            uint result = 0;
-
-            for (int i = 0; i < 8; i++)
-            {
-                index = (byte)(value >> (4 * i) & 0x0f);
-                sBlock = sBox[i][index];
-                result |= (uint)sBlock << (4 * i);
-            }
-
-            return result;
-        }
-
-        private static uint[] GetSubKeys(byte[] key)
+        private uint[] GetSubKeys(byte[] key)
         {
             var subKeys = new uint[8];
             for (int i = 0; i < 8; i++)
@@ -96,7 +95,7 @@ namespace GostPlugin
             return subKeys;
         }
 
-        private static int GetKeyIndex(int i, bool encrypt)
+        private int GetKeyIndex(int i, bool encrypt)
         {
             return encrypt ? (i < 24) ? i % 8 : 7 - (i % 8)
                            : (i < 8) ? i % 8 : 7 - (i % 8);

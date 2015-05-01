@@ -6,6 +6,7 @@ namespace GostPlugin
 {
     public sealed class GostCryptoTransform : ICryptoTransform
     {
+        private GostECB _ecbTransform = new GostECB();
         private readonly byte[] _key = new byte[GostECB.KeyLength];
         private byte[] _state = new byte[GostECB.BlockSize];
         private bool _encrypt;
@@ -16,7 +17,7 @@ namespace GostPlugin
         /// <param name="_key">256-bit _key</param>
         /// <param name="_state">Initialization vector</param>
         /// <param name="_encrypt">Use True for encryption mode</param>
-        public GostCryptoTransform (byte[] key, byte[] iv, bool encrypt)
+        public GostCryptoTransform(byte[] key, byte[] iv, bool encrypt)
         {
             Debug.Assert(key.Length == GostECB.KeyLength, "Key must be 256-bit long");
             Debug.Assert(iv.Length == GostECB.KeyLength, "Initialization Vector must be 64-bit long");
@@ -57,7 +58,7 @@ namespace GostPlugin
         /// <param name="outputBuffer"></param>
         /// <param name="outputOffset"></param>
         /// <returns></returns>
-        public int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
+        public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {
             if (inputCount != 0)
             {
@@ -69,7 +70,7 @@ namespace GostPlugin
 
                 Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
 
-                gamma = GostECB.Process(_state, _key, GostECB.SBox_CryptoPro_A, true);
+                gamma = _ecbTransform.Process(_state, _key, true);
                 result = XOr(dataBlock, gamma);
 
                 Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);
@@ -79,7 +80,7 @@ namespace GostPlugin
             return inputCount;
         }
 
-        private byte[] XOr (byte[] a, byte[] b)
+        private byte[] XOr(byte[] a, byte[] b)
         {
             Debug.Assert(a.Length <= b.Length, "Block length must be shorter or equal to gamma");
 
@@ -99,14 +100,14 @@ namespace GostPlugin
         /// <param name="inputOffset"></param>
         /// <param name="inputCount"></param>
         /// <returns></returns>
-        public byte[] TransformFinalBlock (byte[] inputBuffer, int inputOffset, int inputCount)
+        public byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
         {
             var outputBuffer = new byte[inputCount];
             TransformBlock(inputBuffer, inputOffset, inputCount, outputBuffer, 0);
             return outputBuffer;
         }
 
-        public void Dispose ()
+        public void Dispose()
         {
         }
     }
