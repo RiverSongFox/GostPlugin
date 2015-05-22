@@ -18,5 +18,11 @@ Enables KeePass 2.x to encrypt databases using the GOST 28147-89 algorithm.
 
 ## Usage
 
-1. Make sure that `GOST 28147-89 Plugin` is listed in **Tools → Plugins...** dialog
-2. Switch encryption algorithm in your database's options dialog as described in [Database Settings](http://keepass.info/help/v2/dbsettings.html) section of KeePass documentation
+ 1. Make sure that `GOST 28147-89 Plugin` is listed in **Tools → Plugins...** dialog
+ 2. Switch encryption algorithm in your database's options dialog as described in [Database Settings](http://keepass.info/help/v2/dbsettings.html) section of KeePass documentation
+
+## Acknowledgements
+
+ - Reddit community and PolyPill for their commitment to quality of the code by conducting code review
+ - Habrahabr community, sftp, milabs for their feedback and valuable support in performance optimization techniques
+ - Michael Ospanov for reporting and resolving Addition Modulo 2^32 bug and performance improvement suggestions
