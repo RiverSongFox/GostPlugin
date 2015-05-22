@@ -8,7 +8,18 @@ namespace GostPlugin
         public const int BlockSize = 8; // 64-bit
         public const int KeyLength = 32; // 256-bit
 
-        private readonly byte[][] _sBox = {
+        public static readonly byte[][] SBox_Test = {
+            new byte[] { 0x04, 0x0a, 0x09, 0x02, 0x0d, 0x08, 0x00, 0x0e, 0x06, 0x0b, 0x01, 0x0c, 0x07, 0x0f, 0x05, 0x03 },
+            new byte[] { 0x0e, 0x0b, 0x04, 0x0c, 0x06, 0x0d, 0x0f, 0x0a, 0x02, 0x03, 0x08, 0x01, 0x00, 0x07, 0x05, 0x09 },
+            new byte[] { 0x05, 0x08, 0x01, 0x0d, 0x0a, 0x03, 0x04, 0x02, 0x0e, 0x0f, 0x0c, 0x07, 0x06, 0x00, 0x09, 0x0b },
+            new byte[] { 0x07, 0x0d, 0x0a, 0x01, 0x00, 0x08, 0x09, 0x0f, 0x0e, 0x04, 0x06, 0x0c, 0x0b, 0x02, 0x05, 0x03 },
+            new byte[] { 0x06, 0x0c, 0x07, 0x01, 0x05, 0x0f, 0x0d, 0x08, 0x04, 0x0a, 0x09, 0x0e, 0x00, 0x03, 0x0b, 0x02 },
+            new byte[] { 0x04, 0x0b, 0x0a, 0x00, 0x07, 0x02, 0x01, 0x0d, 0x03, 0x06, 0x08, 0x05, 0x09, 0x0c, 0x0f, 0x0e },
+            new byte[] { 0x0d, 0x0b, 0x04, 0x01, 0x03, 0x0f, 0x05, 0x09, 0x00, 0x0a, 0x0e, 0x07, 0x06, 0x08, 0x02, 0x0c },
+            new byte[] { 0x01, 0x0f, 0x0d, 0x00, 0x05, 0x07, 0x0a, 0x04, 0x09, 0x02, 0x03, 0x0e, 0x06, 0x0b, 0x08, 0x0c }
+        };
+
+        public static readonly byte[][] SBox_CryptoProA = {
             new byte[] { 0x09, 0x06, 0x03, 0x02, 0x08, 0x0b, 0x01, 0x07, 0x0a, 0x04, 0x0e, 0x0f, 0x0c, 0x00, 0x0d, 0x05 },
             new byte[] { 0x03, 0x07, 0x0e, 0x09, 0x08, 0x0a, 0x0f, 0x00, 0x05, 0x02, 0x06, 0x0c, 0x0b, 0x04, 0x0d, 0x01 },
             new byte[] { 0x0e, 0x04, 0x06, 0x02, 0x0b, 0x03, 0x0d, 0x08, 0x0c, 0x0f, 0x05, 0x0a, 0x00, 0x07, 0x01, 0x09 },
@@ -21,12 +32,12 @@ namespace GostPlugin
 
         private uint[][] _sBox32;
 
-        public GostECB()
+        public GostECB(byte[][] sBox = null)
         {
-            Convert_sBox();
+            Convert_sBox(sBox == null ? GostECB.SBox_CryptoProA : sBox);
         }
 
-        private void Convert_sBox()
+        private void Convert_sBox(byte[][] _sBox)
         {
             _sBox32 = new uint[4][];
 
@@ -41,7 +52,7 @@ namespace GostPlugin
             }
         }
 
-        public byte[] Process(byte[] data, byte[] key, bool encrypt)
+        public byte[] Process(byte[] data, byte[] key)
         {
             Debug.Assert(data.Length == BlockSize, "BlockSize must be 64-bit long");
             Debug.Assert(key.Length == KeyLength, "Key must be 256-bit long");
@@ -50,35 +61,29 @@ namespace GostPlugin
             var b = BitConverter.ToUInt32(data, 4);
 
             var subKeys = GetSubKeys(key);
-
             var result = new byte[8];
 
             for (int i = 0; i < 32; i++)
             {
-                var keyIndex = GetKeyIndex(i, encrypt);
+                var keyIndex = (i < 24) ? i % 8 : 7 - (i % 8);
                 var subKey = subKeys[keyIndex];
-                var fValue = F(a, subKey, _sBox);
+                var fValue = F(a, subKey);
                 var round = b ^ fValue;
-                if (i < 31)
-                {
-                    b = a;
-                    a = round;
-                }
-                else
-                {
-                    b = round;
-                }
+
+                b = a;
+                a = round;
+
             }
 
-            Array.Copy(BitConverter.GetBytes(a), 0, result, 0, 4);
-            Array.Copy(BitConverter.GetBytes(b), 0, result, 4, 4);
+            Array.Copy(BitConverter.GetBytes(b), 0, result, 0, 4);
+            Array.Copy(BitConverter.GetBytes(a), 0, result, 4, 4);
 
             return result;
         }
 
-        private uint F(uint block, uint subKey, byte[][] _sBox)
+        private uint F(uint block, uint subKey)
         {
-            block = (block + subKey) % uint.MaxValue;
+            block = block + subKey;
             block =
                 _sBox32[0][(block & 0x000000ff) >> 0] ^
                 _sBox32[1][(block & 0x0000ff00) >> 8] ^
@@ -95,10 +100,5 @@ namespace GostPlugin
             return subKeys;
         }
 
-        private int GetKeyIndex(int i, bool encrypt)
-        {
-            return encrypt ? (i < 24) ? i % 8 : 7 - (i % 8)
-                           : (i < 8) ? i % 8 : 7 - (i % 8);
-        }
     }
 }
