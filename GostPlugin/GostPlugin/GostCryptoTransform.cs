@@ -70,7 +70,7 @@ namespace GostPlugin
 
                 Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
 
-                gamma = _ecbTransform.Process(_state, _key, true);
+                gamma = _ecbTransform.Process(_state, _key);
                 result = XOr(dataBlock, gamma);
 
                 Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);
