@@ -6,7 +6,7 @@ namespace GostPlugin
 {
     public sealed class GostCryptoTransform : ICryptoTransform
     {
-        private GostECB _ecbTransform = new GostECB();
+        private GostECB _ecbTransform = null;
         private readonly byte[] _key = new byte[GostECB.KeyLength];
         private byte[] _state = new byte[GostECB.BlockSize];
         private bool _encrypt;
@@ -22,6 +22,7 @@ namespace GostPlugin
             Debug.Assert(key.Length == GostECB.KeyLength, "Key must be 256-bit long");
             Debug.Assert(iv.Length == GostECB.KeyLength, "Initialization Vector must be 64-bit long");
 
+            _ecbTransform = new GostECB(key);
             Array.Copy(key, _key, GostECB.KeyLength);
             Array.Copy(iv, _state, GostECB.BlockSize);
             _encrypt = encrypt;
@@ -70,7 +71,7 @@ namespace GostPlugin
 
                 Array.Copy(inputBuffer, inputOffset, dataBlock, 0, inputCount);
 
-                gamma = _ecbTransform.Process(_state, _key);
+                gamma = _ecbTransform.Process(_state);
                 result = XOr(dataBlock, gamma);
 
                 Array.Copy(result, 0, outputBuffer, outputOffset, inputCount);

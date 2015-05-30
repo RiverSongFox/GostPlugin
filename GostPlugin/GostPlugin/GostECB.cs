@@ -31,10 +31,12 @@ namespace GostPlugin
         };
 
         private uint[][] _sBox32;
+        private uint[] subKeys;
 
-        public GostECB(byte[][] sBox = null)
+        public GostECB(byte[] key, byte[][] sBox = null)
         {
             Convert_sBox(sBox == null ? GostECB.SBox_CryptoProA : sBox);
+            subKeys = GetSubKeys(key);
         }
 
         private void Convert_sBox(byte[][] _sBox)
@@ -52,26 +54,26 @@ namespace GostPlugin
             }
         }
 
-        public byte[] Process(byte[] data, byte[] key)
+        public byte[] Process(byte[] data)
         {
             Debug.Assert(data.Length == BlockSize, "BlockSize must be 64-bit long");
-            Debug.Assert(key.Length == KeyLength, "Key must be 256-bit long");
 
             var a = BitConverter.ToUInt32(data, 0);
             var b = BitConverter.ToUInt32(data, 4);
 
-            var subKeys = GetSubKeys(key);
             var result = new byte[8];
 
             for (int i = 0; i < 32; i++)
             {
                 var keyIndex = (i < 24) ? i % 8 : 7 - (i % 8);
+                /*
                 var subKey = subKeys[keyIndex];
                 var fValue = F(a, subKey);
                 var round = b ^ fValue;
+                */
 
                 b = a;
-                a = round;
+                a = b ^ F(a, subKeys[keyIndex]);
 
             }
 
@@ -94,6 +96,7 @@ namespace GostPlugin
 
         private uint[] GetSubKeys(byte[] key)
         {
+            Debug.Assert(key.Length == KeyLength, "Key must be 256-bit long");
             var subKeys = new uint[8];
             for (int i = 0; i < 8; i++)
                 subKeys[i] = (uint)BitConverter.ToUInt32(key, i * 4);
