@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace GostPlugin
 {
@@ -30,16 +31,37 @@ namespace GostPlugin
             new byte[] { 0x0b, 0x0a, 0x0f, 0x05, 0x00, 0x0c, 0x0e, 0x08, 0x06, 0x02, 0x03, 0x09, 0x01, 0x07, 0x0d, 0x04 }
         };
 
+        [StructLayout(LayoutKind.Explicit)]
+        private struct UnionSBoxOffsetIndex
+        {
+            [FieldOffset(0)]
+            public uint data;
+
+            [FieldOffset(0)]
+            public byte i0;
+
+            [FieldOffset(1)]
+            public byte i1;
+
+            [FieldOffset(2)]
+            public byte i2;
+
+            [FieldOffset(3)]
+            public byte i3;
+        }
+
+        UnionSBoxOffsetIndex _offset = new UnionSBoxOffsetIndex();
+
         private uint[][] _sBox32;
-        private uint[] subKeys;
+        private uint[] _subKeys;
 
         public GostECB(byte[] key, byte[][] sBox = null)
         {
-            Convert_sBox(sBox == null ? GostECB.SBox_CryptoProA : sBox);
-            subKeys = GetSubKeys(key);
+            ConvertSBox(sBox == null ? GostECB.SBox_CryptoProA : sBox);
+            _subKeys = GetSubKeys(key);
         }
 
-        private void Convert_sBox(byte[][] _sBox)
+        private void ConvertSBox(byte[][] _sBox)
         {
             _sBox32 = new uint[4][];
 
@@ -66,14 +88,17 @@ namespace GostPlugin
             for (int i = 0; i < 32; i++)
             {
                 var keyIndex = (i < 24) ? i % 8 : 7 - (i % 8);
+
                 /*
                 var subKey = subKeys[keyIndex];
                 var fValue = F(a, subKey);
                 var round = b ^ fValue;
                 */
 
+                var round = b ^ F(a, _subKeys[keyIndex]);
+
                 b = a;
-                a = b ^ F(a, subKeys[keyIndex]);
+                a = round;
 
             }
 
@@ -85,13 +110,12 @@ namespace GostPlugin
 
         private uint F(uint block, uint subKey)
         {
-            block = block + subKey;
-            block =
-                _sBox32[0][(block & 0x000000ff) >> 0] ^
-                _sBox32[1][(block & 0x0000ff00) >> 8] ^
-                _sBox32[2][(block & 0x00ff0000) >> 16] ^
-                _sBox32[3][(block & 0xff000000) >> 24];
-            return block;
+            _offset.data = block + subKey;
+            return
+                _sBox32[0][_offset.i0] ^
+                _sBox32[1][_offset.i1] ^
+                _sBox32[2][_offset.i2] ^
+                _sBox32[3][_offset.i3];
         }
 
         private uint[] GetSubKeys(byte[] key)
