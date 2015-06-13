@@ -1,6 +1,10 @@
 # GostPlugin
 Enables KeePass 2.x to encrypt databases using the GOST 28147-89 algorithm.
 
+[![GitHub license](https://img.shields.io/github/license/yaruson/GostPlugin.svg)]()
+[![GitHub release](https://img.shields.io/github/release/yaruson/GostPlugin.svg)]()
+[![Github Releases](https://img.shields.io/github/downloads/yaruson/GostPlugin/latest/total.svg)]()
+
 > The plugin has not been widely tested yet, so we strictly recommend you create backup of your KeePass database before using the plugin for the first time.
 
 ## Features
