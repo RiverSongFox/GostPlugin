@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GostPlugin", "GostPlugin\GostPlugin.csproj", "{9EDDAA7B-45D4-418F-BBEF-E7731F617168}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GostPluginTests", "GostPluginTests\GostPluginTests.csproj", "{2A392BD5-9F94-4C33-BD2B-39C5229072AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GostPluginSpeedTests", "GostPluginSpeedTests\GostPluginSpeedTests.csproj", "{2463C509-9DAC-4BFD-A30E-C0A215C8AEC7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9EDDAA7B-45D4-418F-BBEF-E7731F617168}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EDDAA7B-45D4-418F-BBEF-E7731F617168}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EDDAA7B-45D4-418F-BBEF-E7731F617168}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EDDAA7B-45D4-418F-BBEF-E7731F617168}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A392BD5-9F94-4C33-BD2B-39C5229072AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A392BD5-9F94-4C33-BD2B-39C5229072AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A392BD5-9F94-4C33-BD2B-39C5229072AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A392BD5-9F94-4C33-BD2B-39C5229072AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2463C509-9DAC-4BFD-A30E-C0A215C8AEC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2463C509-9DAC-4BFD-A30E-C0A215C8AEC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2463C509-9DAC-4BFD-A30E-C0A215C8AEC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2463C509-9DAC-4BFD-A30E-C0A215C8AEC7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
