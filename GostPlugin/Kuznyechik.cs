@@ -124,7 +124,7 @@ namespace GostPlugin
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        unsafe public struct w128_t
+        unsafe private struct w128_t
         {
             [FieldOffset(0)]
             public fixed ulong q[2];
