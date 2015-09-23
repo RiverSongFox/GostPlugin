@@ -38,7 +38,7 @@ namespace GostPlugin
             }
         }
 
-        public Kuznyechik() {
+        public Kuznyechik () {
             init_gf256_mul_table();
         }
 
@@ -92,7 +92,25 @@ namespace GostPlugin
             0x01, 0xC0, 0xC2, 0x10, 0x85, 0x20, 0x94, 0x01
         };
 
-        byte[][] _gf_mul_256_table = new byte[256][];
+        /// <summary>
+        /// GF(256) multiplication table
+        /// </summary>
+        byte[][] _gf_mul_256_table = init_gf256_mul_table();
+
+        /// <summary>
+        /// Precalculation of GF(256) multiplication table
+        /// </summary>
+        /// <returns></returns>
+        private static byte[][] init_gf256_mul_table () {
+            byte[][] mul_table = new byte[256][];
+            for (int x = 0; x < 256; x++) {
+                mul_table[x] = new byte[256];
+                for (int y = 0; y < 256; y++) {
+                    mul_table[x][y] = kuz_mul_gf256_slow((byte)x, (byte)y);
+                }
+            }
+            return mul_table;
+        }
 
         /// <summary>
         /// Poly multiplication mod p(x) = x^8 + x^7 + x^6 + x + 1
@@ -100,20 +118,7 @@ namespace GostPlugin
         /// <param name="x">1st factor</param>
         /// <param name="y">2nd factor</param>
         /// <returns>Product</returns>
-        private byte kuz_mul_gf256 (byte x, byte y) {
-            return _gf_mul_256_table[x][y];
-        }
-
-        private void init_gf256_mul_table () {
-            for (int x = 0; x < 256; x++) {
-                _gf_mul_256_table[x] = new byte[256];
-                for (int y = 0; y < 256; y++) {
-                    _gf_mul_256_table[x][y] = kuz_mul_gf256_slow((byte)x, (byte)y);
-                }
-            }
-        }
-
-        private byte kuz_mul_gf256_slow (byte x, byte y) {
+        private static byte kuz_mul_gf256_slow (byte x, byte y) {
             byte z = 0;
 
             while (y != 0) {
@@ -121,7 +126,7 @@ namespace GostPlugin
                     z ^= x;
                 }
 
-                x = (byte)((x << 1) ^ ((x & 0x80) != 0 ? (byte)0xC3 : (byte)0x00));
+                x = (byte)((x << 1) ^ ((x & 0x80) != 0 ? 0xC3 : 0x00));
                 y >>= 1;
             }
 
@@ -244,7 +249,7 @@ namespace GostPlugin
 
                     for (int i = 14; i >= 0; i--) {
                         wp->b[i + 1] = wp->b[i];
-                        x ^= kuz_mul_gf256(wp->b[i], _kuz_lvec[i]);
+                        x ^= _gf_mul_256_table[wp->b[i]][_kuz_lvec[i]];
                     }
 
                     wp->b[0] = x;
