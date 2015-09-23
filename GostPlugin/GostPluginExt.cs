@@ -18,8 +18,6 @@ namespace GostPlugin
             catch (Exception) {
                 return false;
             }
-
         }
-
     }
 }

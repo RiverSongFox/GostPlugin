@@ -13,10 +13,8 @@ namespace GostPlugin
             }
         }
 
-        public byte[] Key {
-            set {
-                _subKeys = GetSubKeys(value);
-            }
+        public void SetKey (byte[] key) {
+            _subKeys = GetSubKeys(key);
         }
 
         public int KeyLength {
@@ -45,7 +43,7 @@ namespace GostPlugin
         /// Substitution Table
         /// id-tc26-gost-28147-param-Z
         /// </summary>
-        readonly byte[][] _sBox =
+        private readonly byte[][] _sBox =
         {
             //            0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
             new byte[] { 0x0C, 0x04, 0x06, 0x02, 0x0A, 0x05, 0x0B, 0x09, 0x0E, 0x08, 0x0D, 0x07, 0x00, 0x03, 0x0F, 0x01 },
@@ -57,9 +55,9 @@ namespace GostPlugin
             new byte[] { 0x08, 0x0E, 0x02, 0x05, 0x06, 0x09, 0x01, 0x0C, 0x0F, 0x04, 0x0B, 0x00, 0x0D, 0x0A, 0x03, 0x07 },
             new byte[] { 0x01, 0x07, 0x0E, 0x0D, 0x00, 0x05, 0x08, 0x03, 0x04, 0x0F, 0x0A, 0x06, 0x09, 0x0C, 0x0B, 0x02 }
         };
-        
+
         private uint[] _subKeys;
-        
+
         public byte[] Encrypt (byte[] data) {
             byte[] dataR = new byte[data.Length];
             Array.Copy(data, dataR, data.Length);
@@ -106,7 +104,6 @@ namespace GostPlugin
             res ^= (uint)(_sBox[7][((a & 0xf0000000) >> 28)] << 28);
 
             return res;
-
         }
 
         private uint[] GetSubKeys (byte[] key) {
@@ -114,12 +111,11 @@ namespace GostPlugin
             uint[] subKeys = new uint[8];
             Array.Copy(key, keyR, key.Length);
             Array.Reverse(keyR);
-            for (int i = 0; i < 8; i++) { 
+            for (int i = 0; i < 8; i++) {
                 subKeys[i] = BitConverter.ToUInt32(keyR, i * 4);
             }
             Array.Reverse(subKeys);
             return subKeys;
         }
-
     }
 }
