@@ -14,12 +14,6 @@ namespace GostPlugin
             }
         }
 
-        public byte[] Key {
-            set {
-                kuz_set_encrypt_key(value);
-            }
-        }
-
         public int KeyLength {
             get {
                 return KEY_LENGTH;
@@ -38,10 +32,6 @@ namespace GostPlugin
             }
         }
 
-        public Kuznyechik () {
-            init_gf256_mul_table();
-        }
-
         /*
          * The following code is based on Markku-Juhani O. Saarinen's <mjos@iki.fi>
          * C implementation of GOST 34.12-2015 algorithm
@@ -50,7 +40,7 @@ namespace GostPlugin
 
         // The S-Box from section 5.1.1
 
-        readonly byte[] _kuz_pi = {
+        private readonly byte[] _kuz_pi = {
             0xFC, 0xEE, 0xDD, 0x11, 0xCF, 0x6E, 0x31, 0x16, 	// 00..07
             0xFB, 0xC4, 0xFA, 0xDA, 0x23, 0xC5, 0x04, 0x4D, 	// 08..0F
             0xE9, 0x77, 0xF0, 0xDB, 0x93, 0x2E, 0x99, 0xBA, 	// 10..17
@@ -87,7 +77,7 @@ namespace GostPlugin
 
         // Linear vector from sect 5.1.2
 
-        readonly byte[] _kuz_lvec = {
+        private readonly byte[] _kuz_lvec = {
             0x94, 0x20, 0x85, 0x10, 0xC2, 0xC0, 0x01, 0xFB,
             0x01, 0xC0, 0xC2, 0x10, 0x85, 0x20, 0x94, 0x01
         };
@@ -95,7 +85,7 @@ namespace GostPlugin
         /// <summary>
         /// GF(256) multiplication table
         /// </summary>
-        byte[][] _gf_mul_256_table = init_gf256_mul_table();
+        private byte[][] _gf_mul_256_table = init_gf256_mul_table();
 
         /// <summary>
         /// Precalculation of GF(256) multiplication table
@@ -138,6 +128,7 @@ namespace GostPlugin
         {
             [FieldOffset(0)]
             public fixed ulong q[2];
+
             [FieldOffset(0)]
             public fixed byte b[16];
         }
@@ -151,7 +142,7 @@ namespace GostPlugin
         /// Key setup routine
         /// </summary>
         /// <param name="value"></param>
-        unsafe private void kuz_set_encrypt_key (byte[] key) {
+        unsafe public void SetKey (byte[] key) {
             w128_t c, x, y, z;
 
             for (int i = 0; i < 16; i++) {
@@ -164,7 +155,6 @@ namespace GostPlugin
             _key[1] = y;
 
             for (int i = 1; i <= 32; i++) {
-
                 // C Value
                 c.q[0] = 0;
                 c.q[1] = 0;
@@ -191,7 +181,6 @@ namespace GostPlugin
                     _key[(i >> 2) + 1] = y;
                 }
             }
-
         }
 
         /// <summary>
@@ -243,7 +232,6 @@ namespace GostPlugin
             {
                 // 16 rounds
                 for (int j = 0; j < 16; j++) {
-
                     // An LFSR with 16 elements from GF(2^8)
                     x = wp->b[15]; // Since lvec[15] = 1
 
@@ -253,10 +241,8 @@ namespace GostPlugin
                     }
 
                     wp->b[0] = x;
-
                 }
             }
         }
-
     }
 }

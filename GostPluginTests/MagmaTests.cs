@@ -21,7 +21,7 @@ namespace GostPlugin.Tests
         [TestMethod()]
         public void Magma () {
             Magma cipher = new Magma();
-            cipher.Key = _ref_key;
+            cipher.SetKey(_ref_key);
             byte[] result = cipher.Encrypt(_ref_plain);
             CollectionAssert.AreEqual(_ref_cipher, result);
         }
