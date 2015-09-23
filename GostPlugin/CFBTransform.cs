@@ -11,7 +11,7 @@ namespace GostPlugin
 
         public CFBTransform (byte[] pbKey, byte[] pbIV, bool bEncrypt, ICipherAlgorithm cipher) {
             _cipher = cipher;
-            _cipher.Key = pbKey;
+            _cipher.SetKey(pbKey);
 
             _encrypt = bEncrypt;
 

@@ -14,12 +14,6 @@ namespace GostPlugin
             }
         }
 
-        public byte[] Key {
-            set {
-                kuz_set_encrypt_key(value);
-            }
-        }
-
         public int KeyLength {
             get {
                 return KEY_LENGTH;
@@ -34,12 +28,8 @@ namespace GostPlugin
 
         public byte[] UuidBytes {
             get {
-                return new byte[] { 0xfa, 0x13, 0x82, 0x37, 0x10, 0xad, 0x4f, 0x43, 0x86, 0xa2, 0x11, 0x85, 0x27, 0xd5, 0x3e, 0xfe };
+                return new byte[] { 0x6a, 0x26, 0x1a, 0x17, 0x55, 0x39, 0x41, 0x9d, 0x9d, 0x85, 0x0e, 0x3f, 0x36, 0x31, 0xd0, 0x4b };
             }
-        }
-
-        public Kuznyechik() {
-            init_gf256_mul_table();
         }
 
         /*
@@ -50,7 +40,7 @@ namespace GostPlugin
 
         // The S-Box from section 5.1.1
 
-        readonly byte[] _kuz_pi = {
+        private readonly byte[] _kuz_pi = {
             0xFC, 0xEE, 0xDD, 0x11, 0xCF, 0x6E, 0x31, 0x16, 	// 00..07
             0xFB, 0xC4, 0xFA, 0xDA, 0x23, 0xC5, 0x04, 0x4D, 	// 08..0F
             0xE9, 0x77, 0xF0, 0xDB, 0x93, 0x2E, 0x99, 0xBA, 	// 10..17
@@ -87,12 +77,30 @@ namespace GostPlugin
 
         // Linear vector from sect 5.1.2
 
-        readonly byte[] _kuz_lvec = {
+        private readonly byte[] _kuz_lvec = {
             0x94, 0x20, 0x85, 0x10, 0xC2, 0xC0, 0x01, 0xFB,
             0x01, 0xC0, 0xC2, 0x10, 0x85, 0x20, 0x94, 0x01
         };
 
-        byte[][] _gf_mul_256_table = new byte[256][];
+        /// <summary>
+        /// GF(256) multiplication table
+        /// </summary>
+        private byte[][] _gf_mul_256_table = init_gf256_mul_table();
+
+        /// <summary>
+        /// Precalculation of GF(256) multiplication table
+        /// </summary>
+        /// <returns></returns>
+        private static byte[][] init_gf256_mul_table () {
+            byte[][] mul_table = new byte[256][];
+            for (int x = 0; x < 256; x++) {
+                mul_table[x] = new byte[256];
+                for (int y = 0; y < 256; y++) {
+                    mul_table[x][y] = kuz_mul_gf256_slow((byte)x, (byte)y);
+                }
+            }
+            return mul_table;
+        }
 
         /// <summary>
         /// Poly multiplication mod p(x) = x^8 + x^7 + x^6 + x + 1
@@ -100,20 +108,7 @@ namespace GostPlugin
         /// <param name="x">1st factor</param>
         /// <param name="y">2nd factor</param>
         /// <returns>Product</returns>
-        private byte kuz_mul_gf256 (byte x, byte y) {
-            return _gf_mul_256_table[x][y];
-        }
-
-        private void init_gf256_mul_table () {
-            for (int x = 0; x < 256; x++) {
-                _gf_mul_256_table[x] = new byte[256];
-                for (int y = 0; y < 256; y++) {
-                    _gf_mul_256_table[x][y] = kuz_mul_gf256_slow((byte)x, (byte)y);
-                }
-            }
-        }
-
-        private byte kuz_mul_gf256_slow (byte x, byte y) {
+        private static byte kuz_mul_gf256_slow (byte x, byte y) {
             byte z = 0;
 
             while (y != 0) {
@@ -121,7 +116,7 @@ namespace GostPlugin
                     z ^= x;
                 }
 
-                x = (byte)((x << 1) ^ ((x & 0x80) != 0 ? (byte)0xC3 : (byte)0x00));
+                x = (byte)((x << 1) ^ ((x & 0x80) != 0 ? 0xC3 : 0x00));
                 y >>= 1;
             }
 
@@ -129,10 +124,11 @@ namespace GostPlugin
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        unsafe public struct w128_t
+        unsafe private struct w128_t
         {
             [FieldOffset(0)]
             public fixed ulong q[2];
+
             [FieldOffset(0)]
             public fixed byte b[16];
         }
@@ -146,7 +142,7 @@ namespace GostPlugin
         /// Key setup routine
         /// </summary>
         /// <param name="value"></param>
-        unsafe private void kuz_set_encrypt_key (byte[] key) {
+        unsafe public void SetKey (byte[] key) {
             w128_t c, x, y, z;
 
             for (int i = 0; i < 16; i++) {
@@ -159,7 +155,6 @@ namespace GostPlugin
             _key[1] = y;
 
             for (int i = 1; i <= 32; i++) {
-
                 // C Value
                 c.q[0] = 0;
                 c.q[1] = 0;
@@ -186,7 +181,6 @@ namespace GostPlugin
                     _key[(i >> 2) + 1] = y;
                 }
             }
-
         }
 
         /// <summary>
@@ -238,20 +232,17 @@ namespace GostPlugin
             {
                 // 16 rounds
                 for (int j = 0; j < 16; j++) {
-
                     // An LFSR with 16 elements from GF(2^8)
                     x = wp->b[15]; // Since lvec[15] = 1
 
                     for (int i = 14; i >= 0; i--) {
                         wp->b[i + 1] = wp->b[i];
-                        x ^= kuz_mul_gf256(wp->b[i], _kuz_lvec[i]);
+                        x ^= _gf_mul_256_table[wp->b[i]][_kuz_lvec[i]];
                     }
 
                     wp->b[0] = x;
-
                 }
             }
         }
-
     }
 }

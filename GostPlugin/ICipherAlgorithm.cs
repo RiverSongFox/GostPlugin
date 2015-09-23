@@ -10,22 +10,28 @@
         /// Printable cipher name
         /// </summary>
         string Name { get; }
+
         /// <summary>
         /// Raw cipher UUID
         /// </summary>
         byte[] UuidBytes { get; }
+
         /// <summary>
         /// Key length in bytes
         /// </summary>
         int KeyLength { get; }
+
         /// <summary>
         /// Block size in bytes
         /// </summary>
         int BlockSize { get; }
+
         /// <summary>
-        /// Write-only key attribute
+        /// Set encryption key for cipher instance
         /// </summary>
-        byte[] Key { set; }
+        /// <param name="key">Key as byte array</param>
+        void SetKey (byte[] key);
+
         /// <summary>
         /// Encrypts block of data using key set before
         /// </summary>

@@ -1,4 +1,5 @@
 ﻿using KeePass.Plugins;
+using System;
 
 namespace GostPlugin
 {
@@ -9,10 +10,14 @@ namespace GostPlugin
         public override bool Initialize (IPluginHost host) {
             if (host == null || host.CipherPool == null) return false;
 
-            host.CipherPool.AddCipher(new CipherEngine(new Kuznyechik()));
-            host.CipherPool.AddCipher(new CipherEngine(new Magma()));
-
-            return true;
+            try {
+                host.CipherPool.AddCipher(new CipherEngine(new Kuznyechik()));
+                host.CipherPool.AddCipher(new CipherEngine(new Magma()));
+                return true;
+            }
+            catch (Exception) {
+                return false;
+            }
         }
     }
 }
