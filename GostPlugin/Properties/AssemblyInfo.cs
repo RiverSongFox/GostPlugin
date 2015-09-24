@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("GostPlugin")]
-[assembly: AssemblyDescription("GOST 34.12-2015, Russian government standard symmetric key block cipher.")]
+[assembly: AssemblyTitle("GOST R 34.12-2015 Plugin")]
+[assembly: AssemblyDescription("GOST R 34.12-2015, Russian government standard symmetric key block cipher.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Nikolay Kim")]
 [assembly: AssemblyProduct("KeePass Plugin")]
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.0.0")]
-[assembly: AssemblyFileVersion("2.0.0")]
+[assembly: AssemblyVersion("2.0")]
+[assembly: AssemblyFileVersion("2.0")]
