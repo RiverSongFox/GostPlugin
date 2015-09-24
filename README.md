@@ -1,11 +1,11 @@
 # GostPlugin
-Enables KeePass 2.x to encrypt databases using the GOST 28147-89 algorithm.
+Enables KeePass 2.x to encrypt databases using the GOST R 34.12-2015 algorithm.
 
 [![GitHub license](https://img.shields.io/github/license/yaruson/GostPlugin.svg)]()
 [![GitHub release](https://img.shields.io/github/release/yaruson/GostPlugin.svg)]()
 [![Github Releases](https://img.shields.io/github/downloads/yaruson/GostPlugin/latest/total.svg)]()
 
-> Latest 2.0 Alpha release is incompatible with older 1.x versions and should be used with caution
+> Latest 2.0 release is incompatible with older 1.x versions and then should be used with caution
 
 ## Features
 
