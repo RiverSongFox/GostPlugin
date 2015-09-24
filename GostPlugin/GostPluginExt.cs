@@ -5,7 +5,7 @@ namespace GostPlugin
 {
     public class GostPluginExt : Plugin
     {
-        public override string UpdateUrl { get { return "https://yaruson.github.io/GostPlugin/VersionInformation.txt"; } }
+        public override string UpdateUrl { get { return "https://gostplugin.ru/VersionInformation.txt"; } }
 
         public override bool Initialize (IPluginHost host) {
             if (host == null || host.CipherPool == null) return false;
