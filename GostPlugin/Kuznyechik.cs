@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace GostPlugin
 {
@@ -7,6 +6,8 @@ namespace GostPlugin
     {
         private const int BLOCK_SIZE = 16;
         private const int KEY_LENGTH = 32;
+
+        private const int SUB_LENGTH = KEY_LENGTH / 2;
 
         public int BlockSize {
             get {
@@ -32,15 +33,70 @@ namespace GostPlugin
             }
         }
 
+        public byte[] Encrypt (byte[] data) {
+            byte[] block = new byte[BLOCK_SIZE];
+            byte[] temp = new byte[BLOCK_SIZE];
+
+            Array.Copy(data, block, BLOCK_SIZE);
+
+            for (int i = 0; i < 9; i++) {
+                LSX(ref temp, ref _subKeys[i], ref block);
+                Array.Copy(temp, block, BLOCK_SIZE);
+            }
+
+            X(ref block, ref _subKeys[9]);
+
+            return block;
+
+        }
+
+        private byte[][] _subKeys;
+
+        public void SetKey (byte[] key) {
+
+            /*
+             * Initialize SubKeys array
+             */
+
+            _subKeys = new byte[10][];
+            for (int i = 0; i < 10; i++) {
+                _subKeys[i] = new byte[SUB_LENGTH];
+            }
+
+            byte[] x = new byte[SUB_LENGTH];
+            byte[] y = new byte[SUB_LENGTH];
+
+            byte[] c = new byte[SUB_LENGTH];
+
+            /*
+             * SubKey[1] = k[255..128]
+             * SubKey[2] = k[127..0]
+             */
+
+            for (int i = 0; i < SUB_LENGTH; i++) {
+                _subKeys[0][i] = x[i] = key[i];
+                _subKeys[1][i] = y[i] = key[i + 16];
+            }
+
+            for (int k = 1; k < 5; k++) {
+
+                for (int j = 1; j <= 8; j++) {
+                    C(ref c, 8 * (k - 1) + j);
+                    F(ref c, ref x, ref y);
+                }
+
+                Array.Copy(x, _subKeys[2 * k], SUB_LENGTH);
+                Array.Copy(y, _subKeys[2 * k + 1], SUB_LENGTH);
+
+            }
+
+        }
+
         /*
-         * The following code is based on Markku-Juhani O. Saarinen's <mjos@iki.fi>
-         * C implementation of GOST 34.12-2015 algorithm
-         * https://github.com/mjosaarinen/kuznechik
+         * Transformations
          */
 
-        // The S-Box from section 5.1.1
-
-        private readonly byte[] _kuz_pi = {
+        private readonly byte[] _pi = {
             0xFC, 0xEE, 0xDD, 0x11, 0xCF, 0x6E, 0x31, 0x16, 	// 00..07
             0xFB, 0xC4, 0xFA, 0xDA, 0x23, 0xC5, 0x04, 0x4D, 	// 08..0F
             0xE9, 0x77, 0xF0, 0xDB, 0x93, 0x2E, 0x99, 0xBA, 	// 10..17
@@ -75,22 +131,13 @@ namespace GostPlugin
             0xD1, 0x66, 0xAF, 0xC2, 0x39, 0x4B, 0x63, 0xB6, 	// F8..FF
         };
 
-        // Linear vector from sect 5.1.2
-
-        private readonly byte[] _kuz_lvec = {
+        private readonly byte[] _lFactors = {
             0x94, 0x20, 0x85, 0x10, 0xC2, 0xC0, 0x01, 0xFB,
             0x01, 0xC0, 0xC2, 0x10, 0x85, 0x20, 0x94, 0x01
         };
 
-        /// <summary>
-        /// GF(256) multiplication table
-        /// </summary>
-        private byte[][] _gf_mul_256_table = init_gf256_mul_table();
+        private byte[][] _gf_mul = init_gf256_mul_table();
 
-        /// <summary>
-        /// Precalculation of GF(256) multiplication table
-        /// </summary>
-        /// <returns></returns>
         private static byte[][] init_gf256_mul_table () {
             byte[][] mul_table = new byte[256][];
             for (int x = 0; x < 256; x++) {
@@ -102,147 +149,79 @@ namespace GostPlugin
             return mul_table;
         }
 
-        /// <summary>
-        /// Poly multiplication mod p(x) = x^8 + x^7 + x^6 + x + 1
-        /// </summary>
-        /// <param name="x">1st factor</param>
-        /// <param name="y">2nd factor</param>
-        /// <returns>Product</returns>
-        private static byte kuz_mul_gf256_slow (byte x, byte y) {
-            byte z = 0;
-
-            while (y != 0) {
-                if ((y & 1) != 0) {
-                    z ^= x;
-                }
-
-                x = (byte)((x << 1) ^ ((x & 0x80) != 0 ? 0xC3 : 0x00));
-                y >>= 1;
+        private static byte kuz_mul_gf256_slow (byte a, byte b) {
+            byte p = 0;
+            byte counter;
+            byte hi_bit_set;
+            for (counter = 0; counter < 8 && a != 0 && b != 0; counter++) {
+                if ((b & 1) != 0)
+                    p ^= a;
+                hi_bit_set = (byte)(a & 0x80);
+                a <<= 1;
+                if (hi_bit_set != 0)
+                    a ^= 0xc3; /* x^8 + x^7 + x^6 + x + 1 */
+                b >>= 1;
             }
-
-            return z;
+            return p;
         }
 
-        [StructLayout(LayoutKind.Explicit)]
-        unsafe private struct w128_t
-        {
-            [FieldOffset(0)]
-            public fixed ulong q[2];
-
-            [FieldOffset(0)]
-            public fixed byte b[16];
+        private void S (ref byte[] data) {
+            for (int i = 0; i < data.Length; i++) {
+                data[i] = _pi[data[i]];
+            }
         }
 
-        /// <summary>
-        /// Round keys
-        /// </summary>
-        private w128_t[] _key = new w128_t[10];
+        private void X (ref byte[] result, ref byte[] data) {
+            for (int i = 0; i < result.Length; i++) {
+                result[i] ^= data[i];
+            }
+        }
 
-        /// <summary>
-        /// Key setup routine
-        /// </summary>
-        /// <param name="value"></param>
-        unsafe public void SetKey (byte[] key) {
-            w128_t c, x, y, z;
+        private byte l (ref byte[] data) {
+            byte x = data[15];
+            for (int i = 14; i >= 0; i--) {
+                x ^= _gf_mul[data[i]][_lFactors[i]];
+            }
+            return x;
+        }
 
+        private void R (ref byte[] data) {
+            byte z = l(ref data);
+            for (int i = 15; i > 0; i--) {
+                data[i] = data[i - 1];
+            }
+            data[0] = z;
+        }
+
+        private void L (ref byte[] data) {
             for (int i = 0; i < 16; i++) {
-                // This will be have to changed for little-endian systems
-                x.b[i] = key[i];
-                y.b[i] = key[i + 16];
-            }
-
-            _key[0] = x;
-            _key[1] = y;
-
-            for (int i = 1; i <= 32; i++) {
-                // C Value
-                c.q[0] = 0;
-                c.q[1] = 0;
-                c.b[15] = (byte)i;        // load round in lsb
-                kuz_l(ref c);
-
-                z.q[0] = x.q[0] ^ c.q[0];
-                z.q[1] = x.q[1] ^ c.q[1];
-                for (int j = 0; j < 16; j++)
-                    z.b[j] = _kuz_pi[z.b[j]];
-                kuz_l(ref z);
-
-                z.q[0] ^= y.q[0];
-                z.q[1] ^= y.q[1];
-
-                y.q[0] = x.q[0];
-                y.q[1] = x.q[1];
-
-                x.q[0] = z.q[0];
-                x.q[1] = z.q[1];
-
-                if ((i & 7) == 0) {
-                    _key[(i >> 2)] = x;
-                    _key[(i >> 2) + 1] = y;
-                }
+                R(ref data);
             }
         }
 
-        /// <summary>
-        /// Single-block Encryption routine
-        /// </summary>
-        /// <param name="data">Plaintext block</param>
-        /// <returns>Ciphertext block</returns>
-        unsafe public byte[] Encrypt (byte[] data) {
-            w128_t x;
-            byte[] cipherText = new byte[BLOCK_SIZE];
+        private void F (ref byte[] k, ref byte[] a1, ref byte[] a0) {
+            byte[] temp = new byte[SUB_LENGTH];
 
-            x.q[0] = BitConverter.ToUInt64(data, 0);
-            x.q[1] = BitConverter.ToUInt64(data, 8);
+            LSX(ref temp, ref k, ref a1);
+            X(ref temp, ref a0);
 
-            for (int i = 0; i < 9; i++) {
-                fixed (w128_t* subKey = &_key[i])
-                {
-                    x.q[0] ^= subKey->q[0];
-                    x.q[1] ^= subKey->q[1];
-                }
+            Array.Copy(a1, a0, SUB_LENGTH);
+            Array.Copy(temp, a1, SUB_LENGTH);
 
-                for (int j = 0; j < 16; j++) {
-                    x.b[j] = _kuz_pi[x.b[j]];
-                }
-
-                kuz_l(ref x);
-            }
-
-            fixed (w128_t* subKey = &_key[9])
-            {
-                x.q[0] ^= subKey->q[0];
-                x.q[1] ^= subKey->q[1];
-            }
-
-            Array.Copy(BitConverter.GetBytes(x.q[0]), 0, cipherText, 0, 8);
-            Array.Copy(BitConverter.GetBytes(x.q[1]), 0, cipherText, 8, 8);
-
-            return cipherText;
         }
 
-        /// <summary>
-        /// Linear operation
-        /// </summary>
-        /// <param name="w"></param>
-        unsafe private void kuz_l (ref w128_t w) {
-            byte x;
-
-            fixed (w128_t* wp = &w)
-            {
-                // 16 rounds
-                for (int j = 0; j < 16; j++) {
-                    // An LFSR with 16 elements from GF(2^8)
-                    x = wp->b[15]; // Since lvec[15] = 1
-
-                    for (int i = 14; i >= 0; i--) {
-                        wp->b[i + 1] = wp->b[i];
-                        x ^= _gf_mul_256_table[wp->b[i]][_kuz_lvec[i]];
-                    }
-
-                    wp->b[0] = x;
-                }
-            }
+        private void LSX (ref byte[] result, ref byte[] k, ref byte[] a) {
+            Array.Copy(k, result, BLOCK_SIZE);
+            X(ref result, ref a);
+            S(ref result);
+            L(ref result);
         }
+
+        private void C (ref byte[] c, int i) {
+            Array.Clear(c, 0, SUB_LENGTH);
+            c[15] = (byte)i;
+            L(ref c);
+        }
+
     }
 }

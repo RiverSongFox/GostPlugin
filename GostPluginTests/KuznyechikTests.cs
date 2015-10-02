@@ -20,9 +20,9 @@ namespace GostPlugin.Tests
 
         [TestMethod()]
         public void Kuznyechik () {
-            Kuznyechik chiper = new Kuznyechik();
-            chiper.SetKey(_ref_key);
-            CollectionAssert.AreEqual(_ref_cipher, chiper.Encrypt(_ref_plain));
+            Kuznyechik cipher = new Kuznyechik();
+            cipher.SetKey(_ref_key);
+            CollectionAssert.AreEqual(_ref_cipher, cipher.Encrypt(_ref_plain));
         }
 
     }
