@@ -1,4 +1,6 @@
 # GostPlugin
+
+[![Join the chat at https://gitter.im/yaruson/GostPlugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yaruson/GostPlugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Enables KeePass 2.x to encrypt databases using the GOST R 34.12-2015 algorithm.
 
 [![GitHub license](https://img.shields.io/github/license/yaruson/GostPlugin.svg)]()
