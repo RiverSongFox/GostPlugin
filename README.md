@@ -25,6 +25,20 @@ Enables KeePass 2.x to encrypt databases using the GOST R 34.12-2015 algorithm.
 
 > If you're migrating from  1.x version, then change database encryption algorithm to AES before replacing plugin DLL.
 
+
+#### Chocolatey 📦 
+Or you can [use Chocolatey to install](https://community.chocolatey.org/packages/keepass-plugin-gost#install) it in a more automated manner:
+
+```
+choco install keepass-plugin-gost
+```
+
+To [upgrade KeePass Plugin Gost](https://community.chocolatey.org/packages/keepass-plugin-gost#upgrade) to the [latest release version](https://community.chocolatey.org/packages/keepass-plugin-gost#versionhistory) for enjoying the newest features, run the following command from the command line or from PowerShell:
+
+```
+choco upgrade keepass-plugin-gost
+```
+
 ## Usage
 
  1. Make sure that `GOST R 34.12-2015 Plugin` is listed in **Tools → Plugins...** dialog
